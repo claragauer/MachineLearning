@@ -1,0 +1,39 @@
+from PIL import Image, ImageDraw, ImageOps
+
+# Load the provided image
+image_path = "C:\Users\clara\OneDrive\Desktop\visualstyle.png"  # Update this path
+base_image = Image.open(image_path)
+
+# Function to rotate the needle
+def rotate_needle(image, angle, pivot, offset):
+    # Convert the image to RGBA (in case it isn't already)
+    image = image.convert("RGBA")
+
+    # Create a white image the same size as the original image
+    white_bg = Image.new('RGBA', image.size, (255, 255, 255, 255))
+    
+    # Make the needle part transparent
+    bbox = (pivot[0] - offset[0], pivot[1] - offset[1], pivot[0] + offset[0], pivot[1] + offset[1])
+    needle_image = image.crop(bbox)
+    needle_image = ImageOps.exif_transpose(needle_image)
+    needle_image = needle_image.rotate(angle, resample=Image.BICUBIC, center=(offset[0], offset[1]), expand=True)
+
+    # Paste the rotated needle back onto the white background image
+    white_bg.paste(needle_image, (pivot[0] - needle_image.size[0] // 2, pivot[1] - needle_image.size[1] // 2), needle_image)
+
+    return white_bg
+
+# Angles corresponding to 0, 10, 20, 30, 40, 50, 60, 70, 80, 90 psi
+angles = [0, 36, 72, 108, 144, 180, 216, 252, 288, 324]
+pivot = (base_image.width // 2, base_image.height // 2)
+offset = (20, base_image.height // 2)  # Rough estimation of the needle's size and position
+
+# Generate and save images with different needle positions
+output_images = []
+for i, angle in enumerate(angles):
+    rotated_image = rotate_needle(base_image, angle, pivot, offset)
+    output_path = f"controlGauge_{i*10}.png"
+    rotated_image.save(output_path)
+    output_images.append(output_path)
+
+print(output_images)
